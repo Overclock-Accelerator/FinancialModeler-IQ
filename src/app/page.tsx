@@ -36,6 +36,7 @@ export default function Home() {
   const [research, setResearch] = useState<ResearchResult | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showRawJSON, setShowRawJSON] = useState(false);
   const [researchScrollNonce, setResearchScrollNonce] = useState(0);
   const researchSectionRef = useRef<HTMLDivElement>(null);
 
@@ -276,10 +277,22 @@ export default function Home() {
               AI-powered · driver-based · formula-driven
             </p>
           </div>
-          <ModelSelector
-            selectedModelId={selectedModel}
-            onChange={setSelectedModel}
-          />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowRawJSON((v) => !v)}
+              className={`px-2.5 py-1.5 text-xs font-medium tracking-widest uppercase transition-colors ${
+                showRawJSON
+                  ? "bg-white text-black"
+                  : "border border-[#333] text-[#555] hover:border-[#555] hover:text-[#aaa]"
+              }`}
+            >
+              {showRawJSON ? "{ } Raw JSON ON" : "{ } Raw JSON"}
+            </button>
+            <ModelSelector
+              selectedModelId={selectedModel}
+              onChange={setSelectedModel}
+            />
+          </div>
         </div>
       </header>
 
@@ -367,6 +380,22 @@ export default function Home() {
               </CollapsiblePanel>
             )}
 
+            {showRawJSON && (
+              <div className="overflow-hidden border border-[#333]">
+                <div className="flex items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-4 py-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-[#555]">
+                    Raw AI Response — Financial Model (JSON)
+                  </span>
+                  <span className="text-[10px] text-[#444]">
+                    This is the structured data powering the model below
+                  </span>
+                </div>
+                <pre className="max-h-96 overflow-auto bg-[#060606] p-4 text-xs leading-relaxed text-emerald-400">
+                  {JSON.stringify(financialModel, null, 2)}
+                </pre>
+              </div>
+            )}
+
             <DriversPanel
               drivers={financialModel.drivers}
               periods={financialModel.periods}
@@ -390,12 +419,44 @@ export default function Home() {
 
         {/* Analysis */}
         {analysis && (!loading || loading === "samplePrompt" || loading === "analyze" || loading === "research") && (
-          <AnalysisPanel analysis={analysis} />
+          <>
+            {showRawJSON && (
+              <div className="overflow-hidden border border-[#333]">
+                <div className="flex items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-4 py-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-[#555]">
+                    Raw AI Response — Analysis (JSON)
+                  </span>
+                  <span className="text-[10px] text-[#444]">
+                    This is the structured data powering the analysis below
+                  </span>
+                </div>
+                <pre className="max-h-96 overflow-auto bg-[#060606] p-4 text-xs leading-relaxed text-emerald-400">
+                  {JSON.stringify(analysis, null, 2)}
+                </pre>
+              </div>
+            )}
+            <AnalysisPanel analysis={analysis} />
+          </>
         )}
 
         {/* Research */}
         {research && (!loading || loading === "samplePrompt" || loading === "analyze" || loading === "research") && (
-          <div ref={researchSectionRef} className="scroll-mt-6">
+          <div ref={researchSectionRef} className="scroll-mt-6 space-y-4">
+            {showRawJSON && (
+              <div className="overflow-hidden border border-[#333]">
+                <div className="flex items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-4 py-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-[#555]">
+                    Raw AI Response — Research (JSON)
+                  </span>
+                  <span className="text-[10px] text-[#444]">
+                    This is the structured data powering the research below
+                  </span>
+                </div>
+                <pre className="max-h-96 overflow-auto bg-[#060606] p-4 text-xs leading-relaxed text-emerald-400">
+                  {JSON.stringify(research, null, 2)}
+                </pre>
+              </div>
+            )}
             <ResearchPanel research={research} />
           </div>
         )}

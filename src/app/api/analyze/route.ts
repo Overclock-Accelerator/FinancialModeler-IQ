@@ -1,16 +1,22 @@
 import { NextRequest } from "next/server";
 import { getModel, calculateCost } from "@/lib/models";
-import { callLLM } from "@/lib/llm";
+import { callLLM, extractJsonObject } from "@/lib/llm";
 import { ANALYZE_SYSTEM_PROMPT } from "@/lib/prompts";
 import { FinancialModel } from "@/lib/types";
+import { computeModel } from "@/lib/compute";
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    const { model: financialModel, modelId } = (await request.json()) as {
+    const {
+      model: financialModel,
+      modelId,
+      driverOverrides,
+    } = (await request.json()) as {
       model: FinancialModel;
       modelId: string;
+      driverOverrides?: Record<string, number[]>;
     };
 
     if (!financialModel || !modelId) {
@@ -21,10 +27,44 @@ export async function POST(request: NextRequest) {
     }
 
     const aiModel = getModel(modelId);
+    const computed = computeModel(financialModel, driverOverrides);
+
+    const driversSummary = financialModel.drivers
+      .map((d) => {
+        const vals = computed.driverValues[d.id]
+          .map((v) => (d.unit === "percent" ? `${(v * 100).toFixed(1)}%` : v))
+          .join(", ");
+        return `- ${d.id} (${d.label}, ${d.unit}): [${vals}]`;
+      })
+      .join("\n");
+
+    const lineItemsSummary = computed.lineItems
+      .map((li) => {
+        const vals = li.values
+          .map((v) => v.toLocaleString(undefined, { maximumFractionDigits: 0 }))
+          .join(", ");
+        return `- ${li.id} [${li.category}] ${li.label} = ${li.formula}  →  [${vals}]`;
+      })
+      .join("\n");
+
     const result = await callLLM(
       aiModel,
       ANALYZE_SYSTEM_PROMPT,
-      `Analyze the following financial model:\n\nTitle: ${financialModel.title}\nDescription: ${financialModel.description}\n\nAssumptions:\n${financialModel.assumptions.join("\n")}\n\nFinancial Data:\n${JSON.stringify(financialModel.rows, null, 2)}`
+      `Analyze this driver-based financial model.
+
+Title: ${financialModel.title}
+Description: ${financialModel.description}
+Periods: ${financialModel.periods.join(", ")}
+
+Drivers (id, label, per-period values):
+${driversSummary}
+
+Line items (id, category, formula, computed values):
+${lineItemsSummary}
+
+Assumptions:
+${financialModel.assumptions.map((a) => `- ${a}`).join("\n")}`,
+      { json: true, maxTokens: 4096 }
     );
 
     const durationMs = Date.now() - startTime;
@@ -34,12 +74,16 @@ export async function POST(request: NextRequest) {
       result.outputTokens
     );
 
-    let analysis;
+    let analysis: Record<string, unknown>;
     try {
-      analysis = JSON.parse(result.content);
-    } catch {
+      analysis = extractJsonObject<Record<string, unknown>>(result.content);
+    } catch (err) {
       return Response.json(
-        { error: "Failed to parse analysis output. Please try again." },
+        {
+          error: `Failed to parse analysis output: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        },
         { status: 500 }
       );
     }
@@ -63,3 +107,4 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: message }, { status: 500 });
   }
 }
+

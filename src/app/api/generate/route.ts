@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { getModel, calculateCost } from "@/lib/models";
-import { callLLM } from "@/lib/llm";
+import { callLLM, extractJsonObject } from "@/lib/llm";
 import { GENERATE_SYSTEM_PROMPT } from "@/lib/prompts";
+import { computeModel, validateModelShape } from "@/lib/compute";
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -20,7 +21,8 @@ export async function POST(request: NextRequest) {
     const result = await callLLM(
       model,
       GENERATE_SYSTEM_PROMPT,
-      `Generate a detailed 3-year financial model for the following business:\n\n${prompt}`
+      `Build a driver-based financial model for this business. Remember: drivers are tunable inputs, line items are formula-driven outputs, and every yearly P&L number must come from a formula (never hardcoded in a line item's values).\n\nBusiness:\n${prompt}`,
+      { json: true, maxTokens: 8192 }
     );
 
     const durationMs = Date.now() - startTime;
@@ -30,22 +32,52 @@ export async function POST(request: NextRequest) {
       result.outputTokens
     );
 
-    let parsedModel;
+    let parsed: unknown;
     try {
-      parsedModel = JSON.parse(result.content);
-    } catch {
+      parsed = extractJsonObject(result.content);
+    } catch (err) {
       return Response.json(
-        { error: "Failed to parse model output. Please try again." },
+        {
+          error: `LLM did not return valid JSON: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        },
+        { status: 500 }
+      );
+    }
+
+    let financialModel;
+    try {
+      financialModel = validateModelShape(parsed);
+    } catch (err) {
+      return Response.json(
+        {
+          error: `Model validation failed: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        },
+        { status: 500 }
+      );
+    }
+
+    financialModel.id = crypto.randomUUID();
+    financialModel.createdAt = new Date().toISOString();
+
+    try {
+      computeModel(financialModel);
+    } catch (err) {
+      return Response.json(
+        {
+          error: `Formula evaluation failed: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        },
         { status: 500 }
       );
     }
 
     return Response.json({
-      model: {
-        ...parsedModel,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-      },
+      model: financialModel,
       metrics: {
         inputTokens: result.inputTokens,
         outputTokens: result.outputTokens,
@@ -61,3 +93,4 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: message }, { status: 500 });
   }
 }
+

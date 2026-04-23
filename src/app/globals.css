@@ -2,4 +2,17 @@
 
 @theme inline {
   --font-sans: var(--font-inter);
+  --font-display: var(--font-cormorant);
+  --color-surface: #111111;
+  --color-border: #222222;
+  --color-border-dim: #1a1a1a;
+}
+
+:root {
+  --font-cormorant: "Cormorant Garamond", serif;
+}
+
+body {
+  background-color: #080808;
+  color: #ffffff;
 }

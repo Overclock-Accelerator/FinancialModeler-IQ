@@ -9,10 +9,10 @@ interface ModelSelectorProps {
 
 export function ModelSelector({ selectedModelId, onChange }: ModelSelectorProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
       <label
         htmlFor="model-select"
-        className="text-sm font-medium text-slate-500"
+        className="text-xs font-medium tracking-widest text-[#666] uppercase"
       >
         AI Model
       </label>
@@ -20,7 +20,7 @@ export function ModelSelector({ selectedModelId, onChange }: ModelSelectorProps)
         id="model-select"
         value={selectedModelId}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition-colors hover:border-slate-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+        className="border border-[#333] bg-[#0d0d0d] px-3 py-2 text-xs text-[#ccc] tracking-wide transition-colors hover:border-[#555] focus:border-[#666] focus:outline-none"
       >
         {AI_MODELS.map((model) => (
           <option key={model.id} value={model.id}>

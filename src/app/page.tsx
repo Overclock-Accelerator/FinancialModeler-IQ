@@ -19,6 +19,13 @@ import { ResearchPanel } from "@/components/ResearchPanel";
 import { MetricsBar } from "@/components/MetricsBar";
 import { ChatDock } from "@/components/ChatDock";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
+import {
+  GENERATE_SYSTEM_PROMPT,
+  ANALYZE_SYSTEM_PROMPT,
+  RESEARCH_SYSTEM_PROMPT,
+  EDIT_SYSTEM_PROMPT,
+  SAMPLE_PROMPT_SYSTEM_PROMPT,
+} from "@/lib/prompts";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
@@ -37,6 +44,8 @@ export default function Home() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showRawJSON, setShowRawJSON] = useState(false);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+  const [activePromptTab, setActivePromptTab] = useState("generate");
   const [researchScrollNonce, setResearchScrollNonce] = useState(0);
   const researchSectionRef = useRef<HTMLDivElement>(null);
 
@@ -279,6 +288,12 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setShowSystemPrompt(true)}
+              className="border border-[#333] px-2.5 py-1.5 text-xs font-medium tracking-widest text-[#555] uppercase transition-colors hover:border-[#555] hover:text-[#aaa]"
+            >
+              System Prompts
+            </button>
+            <button
               onClick={() => setShowRawJSON((v) => !v)}
               className={`px-2.5 py-1.5 text-xs font-medium tracking-widest uppercase transition-colors ${
                 showRawJSON
@@ -497,6 +512,60 @@ export default function Home() {
           analyzing={loading === "analyze"}
           researching={loading === "research"}
         />
+      )}
+
+      {/* System Prompts Modal */}
+      {showSystemPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowSystemPrompt(false)}>
+          <div className="mx-4 max-h-[85vh] w-full max-w-3xl overflow-hidden border border-[#333] bg-[#0a0a0a] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#222] px-6 py-4">
+              <div>
+                <h2 className="text-sm font-semibold tracking-widest text-white uppercase">System Prompts</h2>
+                <p className="mt-0.5 text-xs text-[#555]">This app uses 5 different prompts — one per AI operation</p>
+              </div>
+              <button onClick={() => setShowSystemPrompt(false)} className="p-1.5 text-[#555] hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex border-b border-[#222]">
+              {[
+                { id: "generate", label: "Generate" },
+                { id: "analyze", label: "Analyze" },
+                { id: "research", label: "Research" },
+                { id: "edit", label: "Chat Edit" },
+                { id: "sample", label: "Sample Prompt" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActivePromptTab(tab.id)}
+                  className={`px-4 py-2.5 text-xs font-medium tracking-wider uppercase transition-colors ${
+                    activePromptTab === tab.id
+                      ? "border-b-2 border-white text-white"
+                      : "text-[#555] hover:text-[#aaa]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="overflow-auto p-6" style={{ maxHeight: "calc(85vh - 140px)" }}>
+              <pre className="whitespace-pre-wrap rounded bg-[#060606] p-4 text-sm leading-relaxed text-emerald-400 font-mono ring-1 ring-[#222]">
+                {activePromptTab === "generate" && GENERATE_SYSTEM_PROMPT}
+                {activePromptTab === "analyze" && ANALYZE_SYSTEM_PROMPT}
+                {activePromptTab === "research" && RESEARCH_SYSTEM_PROMPT}
+                {activePromptTab === "edit" && EDIT_SYSTEM_PROMPT}
+                {activePromptTab === "sample" && SAMPLE_PROMPT_SYSTEM_PROMPT}
+              </pre>
+            </div>
+            <div className="border-t border-[#222] px-6 py-3">
+              <p className="text-[11px] text-[#444]">
+                Source: <code className="rounded bg-[#151515] px-1 py-0.5 text-[10px] text-[#666]">src/lib/prompts.ts</code> &middot; Each prompt shapes a different AI operation in the app
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

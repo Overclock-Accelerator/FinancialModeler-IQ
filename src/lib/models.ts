@@ -51,14 +51,6 @@ export const AI_MODELS: AIModel[] = [
     outputPricePer1M: 1.25,
   },
   {
-    id: "gpt-4-1-nano",
-    name: "GPT-4.1 Nano",
-    provider: "openai",
-    modelId: "gpt-4.1-nano",
-    inputPricePer1M: 0.1,
-    outputPricePer1M: 0.4,
-  },
-  {
     id: "deepseek-v3-2",
     name: "DeepSeek V3.2",
     provider: "openrouter",

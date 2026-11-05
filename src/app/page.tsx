@@ -29,7 +29,7 @@ import {
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [selectedModel, setSelectedModel] = useState("gpt-4-1-nano");
+  const [selectedModel, setSelectedModel] = useState("claude-haiku-4-5");
   const [financialModel, setFinancialModel] = useState<FinancialModel | null>(
     null
   );

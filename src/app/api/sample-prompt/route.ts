@@ -16,7 +16,7 @@ function normalizeSamplePrompt(raw: string): string {
   return s;
 }
 
-const SAMPLE_PROMPT_MODEL_ID = "gpt-4-1-nano";
+const SAMPLE_PROMPT_MODEL_ID = "claude-haiku-4-5";
 
 export async function POST(_request: NextRequest) {
   try {
